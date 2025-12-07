@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,18 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera } from "lucide-react";
+import { Camera, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-
-// Fix for default marker icon
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
 
 const complaintCategories = [
   { value: "public-toilets", label: "Public Toilets & Sanitation", color: "bg-teal" },
@@ -63,16 +52,6 @@ const subCategories: Record<string, string[]> = {
 
 const reasonTags = ["Dirty", "Hazardous", "Stench", "Disease spreading", "Pollution"];
 
-function LocationMarker({ position, setPosition }: { position: [number, number] | null; setPosition: (pos: [number, number]) => void }) {
-  useMapEvents({
-    click(e) {
-      setPosition([e.latlng.lat, e.latlng.lng]);
-    },
-  });
-
-  return position ? <Marker position={position} /> : null;
-}
-
 const Complaint = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
@@ -81,8 +60,8 @@ const Complaint = () => {
   const [reason, setReason] = useState("");
   const [additionalInfo, setAdditionalInfo] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [position, setPosition] = useState<[number, number] | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [locationSelected, setLocationSelected] = useState(false);
   const { toast } = useToast();
 
   const handleTagClick = (tag: string) => {
@@ -96,6 +75,14 @@ const Complaint = () => {
     setSelectedCategory(category);
     setSelectedSubCategory("");
     setShowForm(true);
+  };
+
+  const handleMapClick = () => {
+    setLocationSelected(true);
+    toast({
+      title: "Location Selected",
+      description: "Your location has been marked on the map.",
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -190,21 +177,19 @@ const Complaint = () => {
               </div>
             </div>
 
-            {/* Map */}
+            {/* Map Placeholder */}
             <div>
               <Label>Address :</Label>
-              <div className="h-48 rounded-lg overflow-hidden border mb-2">
-                <MapContainer
-                  center={[13.0827, 80.2707]}
-                  zoom={12}
-                  style={{ height: "100%", width: "100%" }}
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <LocationMarker position={position} setPosition={setPosition} />
-                </MapContainer>
+              <div 
+                className="h-48 rounded-lg overflow-hidden border mb-2 bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center cursor-pointer hover:bg-blue-100/50 transition-colors"
+                onClick={handleMapClick}
+              >
+                <div className="text-center">
+                  <MapPin className={`w-12 h-12 mx-auto mb-2 ${locationSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <p className="text-sm text-muted-foreground">
+                    {locationSelected ? "Location selected!" : "Click to select location on map"}
+                  </p>
+                </div>
               </div>
               <Textarea
                 placeholder="Full Address"

@@ -1,61 +1,49 @@
 import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import { Truck, Navigation } from "lucide-react";
+import { Truck, Navigation, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
 
-// Fix for default marker icon
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
+interface TruckData {
+  id: number;
+  name: string;
+  driver: string;
+  lat: number;
+  lng: number;
+  status: string;
+}
 
-// Create truck icon
-const truckIcon = new L.Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/3097/3097180.png",
-  iconSize: [40, 40],
-  iconAnchor: [20, 40],
-  popupAnchor: [0, -40],
-});
-
-const trucks = [
+const initialTrucks: TruckData[] = [
   { id: 1, name: "Truck #101", driver: "Rajesh Sharma", lat: 21.1458, lng: 79.0882, status: "active" },
   { id: 2, name: "Truck #102", driver: "Herolal Honda", lat: 21.1558, lng: 79.0982, status: "active" },
   { id: 3, name: "Truck #103", driver: "Ramakant Pandey", lat: 21.1358, lng: 79.0782, status: "idle" },
 ];
 
-function AnimatedTruck({ position }: { position: [number, number] }) {
-  const [currentPos, setCurrentPos] = useState(position);
+const TrackTruck = () => {
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [trucks, setTrucks] = useState<TruckData[]>(initialTrucks);
 
+  // Simulate truck movement
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentPos((prev) => [
-        prev[0] + (Math.random() - 0.5) * 0.002,
-        prev[1] + (Math.random() - 0.5) * 0.002,
-      ]);
-    }, 2000);
+      setTrucks((prevTrucks) =>
+        prevTrucks.map((truck) => ({
+          ...truck,
+          lat: truck.lat + (Math.random() - 0.5) * 0.001,
+          lng: truck.lng + (Math.random() - 0.5) * 0.001,
+        }))
+      );
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
-
-  return (
-    <Marker position={currentPos} icon={truckIcon}>
-      <Popup>Active garbage truck in area</Popup>
-    </Marker>
-  );
-}
-
-const TrackTruck = () => {
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
   const handleGetLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation([position.coords.latitude, position.coords.longitude]);
+          setUserLocation({ 
+            lat: position.coords.latitude, 
+            lng: position.coords.longitude 
+          });
         },
         (error) => {
           console.error("Error getting location:", error);
@@ -78,29 +66,48 @@ const TrackTruck = () => {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Map */}
+        {/* Map Placeholder */}
         <div className="lg:col-span-2">
           <Card>
             <CardContent className="p-0 overflow-hidden rounded-lg">
-              <div className="h-96 lg:h-[500px]">
-                <MapContainer
-                  center={userLocation || [21.1458, 79.0882]}
-                  zoom={13}
-                  style={{ height: "100%", width: "100%" }}
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  {trucks.map((truck) => (
-                    <AnimatedTruck key={truck.id} position={[truck.lat, truck.lng]} />
+              <div className="h-96 lg:h-[500px] bg-gradient-to-br from-green-100 to-blue-100 flex flex-col items-center justify-center relative">
+                {/* Map visualization */}
+                <div className="absolute inset-4 border-2 border-dashed border-primary/30 rounded-lg">
+                  {/* Truck markers */}
+                  {trucks.map((truck, index) => (
+                    <div
+                      key={truck.id}
+                      className="absolute transition-all duration-1000"
+                      style={{
+                        left: `${20 + index * 25}%`,
+                        top: `${30 + (index % 2) * 30}%`,
+                      }}
+                    >
+                      <div className={`w-10 h-10 rounded-full ${truck.status === 'active' ? 'bg-green-500' : 'bg-gray-400'} flex items-center justify-center shadow-lg`}>
+                        <Truck className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-card px-2 py-1 rounded text-xs shadow whitespace-nowrap">
+                        {truck.name}
+                      </div>
+                    </div>
                   ))}
+                  
+                  {/* User location marker */}
                   {userLocation && (
-                    <Marker position={userLocation}>
-                      <Popup>Your Location</Popup>
-                    </Marker>
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                      <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center shadow-lg animate-pulse">
+                        <MapPin className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-card px-2 py-1 rounded text-xs shadow whitespace-nowrap">
+                        You
+                      </div>
+                    </div>
                   )}
-                </MapContainer>
+                </div>
+                
+                <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur-sm px-3 py-2 rounded-lg text-xs text-muted-foreground">
+                  Live truck positions (simulated)
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -130,6 +137,9 @@ const TrackTruck = () => {
                       <p className="font-medium">{truck.name}</p>
                       <p className="text-sm text-muted-foreground">Driver: {truck.driver}</p>
                       <p className="text-xs text-muted-foreground capitalize">Status: {truck.status}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Coords: {truck.lat.toFixed(4)}, {truck.lng.toFixed(4)}
+                      </p>
                     </div>
                   </div>
                 </div>
