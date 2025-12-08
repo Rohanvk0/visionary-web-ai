@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { User, Lock, Mail } from "lucide-react";
+import { User, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import gandhiSpectacles from "@/assets/gandhi-spectacles.png";
 
 type Role = "citizen" | "employee" | "admin";
 
@@ -13,22 +14,25 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [selectedRole, setSelectedRole] = useState<Role>("citizen");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const { signIn, user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Welcome back!",
-        description: `Logged in as ${selectedRole}`,
-      });
+    const { error } = await signIn(email, password);
+    
+    setIsLoading(false);
+    if (!error) {
       navigate("/");
-    }, 1500);
+    }
   };
 
   const roles: { value: Role; label: string }[] = [
@@ -50,9 +54,7 @@ const Login = () => {
       {/* Header */}
       <header className="relative z-10 p-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-forest to-lime flex items-center justify-center">
-            <span className="text-xl">🌳</span>
-          </div>
+          <img src={gandhiSpectacles} alt="Gandhi Spectacles" className="w-14 h-14 rounded-full bg-primary-foreground/20 p-1" />
           <span className="text-primary-foreground font-display text-lg hidden sm:block">Swachha Swatantra</span>
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-primary-foreground/90">
@@ -69,7 +71,7 @@ const Login = () => {
         <div className="w-full max-w-4xl bg-card/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate-slide-up">
           {/* Left Panel - Illustration */}
           <div className="md:w-1/2 bg-gradient-to-br from-forest via-teal to-lime p-8 flex flex-col items-center justify-center text-primary-foreground">
-            <div className="text-8xl mb-6">🧹</div>
+            <img src={gandhiSpectacles} alt="Gandhi Spectacles" className="w-32 h-32 mb-6 drop-shadow-lg" />
             <h2 className="font-display text-3xl font-bold mb-2 text-center">स्वच्छता ही सेवा</h2>
             <p className="text-center text-primary-foreground/90 text-sm">
               Cleanliness is service. Together we strive for a cleaner, greener tomorrow.
@@ -110,15 +112,12 @@ const Login = () => {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Enter your Email or Username"
+                    placeholder="Enter your Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
                     required
                   />
-                </div>
-                <div className="text-right">
-                  <Link to="#" className="text-xs text-primary hover:underline">Forgot Username?</Link>
                 </div>
               </div>
 
@@ -135,9 +134,6 @@ const Login = () => {
                     className="pl-10"
                     required
                   />
-                </div>
-                <div className="text-right">
-                  <Link to="#" className="text-xs text-primary hover:underline">Forgot Password?</Link>
                 </div>
               </div>
 

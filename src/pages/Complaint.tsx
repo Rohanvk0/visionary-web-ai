@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,8 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, MapPin } from "lucide-react";
+import { Camera, MapPin, Loader2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate, Link } from "react-router-dom";
 
 const complaintCategories = [
   { value: "public-toilets", label: "Public Toilets & Sanitation", color: "bg-teal" },
@@ -55,14 +58,16 @@ const reasonTags = ["Dirty", "Hazardous", "Stench", "Disease spreading", "Pollut
 const Complaint = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
-  const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [reason, setReason] = useState("");
   const [additionalInfo, setAdditionalInfo] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [locationSelected, setLocationSelected] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleTagClick = (tag: string) => {
     setSelectedTags((prev) =>
@@ -85,18 +90,62 @@ const Complaint = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Please login",
+        description: "You need to be logged in to submit a complaint.",
+        variant: "destructive",
+      });
+      navigate("/login");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const { error } = await supabase.from('complaints').insert({
+      user_id: user.id,
+      category: selectedCategory,
+      description: `${selectedSubCategory}: ${reason}. ${additionalInfo}`,
+      location: address,
+      status: 'pending',
+    });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit complaint. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
       title: "Complaint Submitted!",
-      description: "Your complaint has been registered successfully. We will address it shortly.",
+      description: "Your complaint has been registered successfully. Track it in your dashboard.",
     });
+    navigate("/dashboard");
   };
 
   if (!showForm) {
     return (
       <div className="max-w-4xl mx-auto animate-fade-in">
-        <h1 className="font-display text-2xl font-bold text-center mb-8">Select The Complaint Category</h1>
+        <h1 className="font-display text-2xl font-bold text-center mb-4">Select The Complaint Category</h1>
+        
+        {!user && (
+          <Card className="mb-6 bg-amber-50 border-amber-200">
+            <CardContent className="p-4 flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+              <p className="text-amber-800 text-sm">
+                Please <Link to="/login" className="font-medium underline">login</Link> to submit a complaint.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
           {complaintCategories.map((cat) => (
@@ -167,12 +216,11 @@ const Complaint = () => {
                 </Select>
               </div>
               <div>
-                <Label>Username or Email :</Label>
+                <Label>Your Email :</Label>
                 <Input
-                  placeholder="Enter your username or email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
+                  value={user?.email || ""}
+                  disabled
+                  className="bg-muted"
                 />
               </div>
             </div>
@@ -244,7 +292,16 @@ const Complaint = () => {
               <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
                 Back
               </Button>
-              <Button type="submit">Submit</Button>
+              <Button type="submit" disabled={isSubmitting || !user}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit"
+                )}
+              </Button>
             </div>
           </form>
         </CardContent>

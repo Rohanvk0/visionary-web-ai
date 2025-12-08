@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { User, Mail, Phone, Lock, Calendar, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import gandhiSpectacles from "@/assets/gandhi-spectacles.png";
+
+type AppRole = 'admin' | 'citizen' | 'employee';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    role: "",
+    role: "citizen" as AppRole,
     firstName: "",
     middleName: "",
     lastName: "",
@@ -22,8 +24,14 @@ const Register = () => {
     confirmPassword: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const { signUp, user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -33,23 +41,23 @@ const Register = () => {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
       return;
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Account created!",
-        description: "Please sign in to continue",
-      });
+    const fullName = `${formData.firstName} ${formData.middleName} ${formData.lastName}`.trim();
+    
+    const { error } = await signUp(
+      formData.email, 
+      formData.password, 
+      fullName, 
+      formData.role
+    );
+    
+    setIsLoading(false);
+    if (!error) {
       navigate("/login");
-    }, 1500);
+    }
   };
 
   return (
@@ -57,9 +65,7 @@ const Register = () => {
       {/* Header */}
       <header className="bg-card shadow-sm p-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-forest to-lime flex items-center justify-center">
-            <span className="text-xl">🌳</span>
-          </div>
+          <img src={gandhiSpectacles} alt="Gandhi Spectacles" className="w-14 h-14 rounded-full bg-lime/20 p-1" />
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-foreground/80">
           <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
@@ -75,9 +81,7 @@ const Register = () => {
         <div className="max-w-5xl mx-auto bg-card rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row animate-slide-up">
           {/* Left Panel */}
           <div className="md:w-2/5 bg-gradient-to-br from-forest via-teal to-accent p-8 flex flex-col items-center justify-center text-primary-foreground">
-            <div className="w-24 h-24 rounded-full bg-primary-foreground/20 flex items-center justify-center mb-6">
-              <span className="text-4xl">🌳</span>
-            </div>
+            <img src={gandhiSpectacles} alt="Gandhi Spectacles" className="w-24 h-24 mb-6 drop-shadow-lg" />
             <h2 className="font-display text-3xl font-bold mb-4">Welcome</h2>
             <p className="text-center text-primary-foreground/90 text-sm leading-relaxed">
               " स्वच्छ भारत अभियान का,<br/>
@@ -211,6 +215,7 @@ const Register = () => {
                     value={formData.password}
                     onChange={(e) => handleChange("password", e.target.value)}
                     required
+                    minLength={6}
                   />
                 </div>
                 <div>
