@@ -13,12 +13,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Link } from "react-router-dom";
 
 const complaintCategories = [
-  { value: "public-toilets", label: "Public Toilets & Sanitation", color: "bg-teal" },
-  { value: "waste-management", label: "Waste & Garbage Management", color: "bg-lime-dark" },
-  { value: "drainage", label: "Drainage & Sewerage Issues", color: "bg-amber-500" },
-  { value: "construction", label: "Construction & Debris", color: "bg-teal" },
-  { value: "street-cleaning", label: "Street Cleaning / Sweeping", color: "bg-teal" },
-  { value: "septic-tank", label: "Septic Tank Issues", color: "bg-teal" },
+  { value: "public-toilets", label: "Public Toilets & Sanitation", color: "bg-teal", icon: "🚽" },
+  { value: "waste-management", label: "Waste & Garbage Management", color: "bg-lime-dark", icon: "🗑️" },
+  { value: "drainage", label: "Drainage & Sewerage Issues", color: "bg-amber-500", icon: "💧" },
+  { value: "construction", label: "Construction & Debris", color: "bg-coral", icon: "🏗️" },
+  { value: "street-cleaning", label: "Street Cleaning / Sweeping", color: "bg-forest", icon: "🧹" },
+  { value: "septic-tank", label: "Septic Tank Issues", color: "bg-teal-light", icon: "🔧" },
 ];
 
 const subCategories: Record<string, string[]> = {
@@ -154,9 +154,11 @@ const Complaint = () => {
               className="cursor-pointer hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 bg-lime border-lime-dark/20"
               onClick={() => handleCategorySelect(cat.value)}
             >
-              <CardContent className="p-6">
-                <div className={`w-12 h-12 rounded-full ${cat.color} mb-3`} />
-                <p className="font-medium text-foreground">{cat.label}</p>
+              <CardContent className="p-6 flex flex-col items-center text-center">
+                <div className={`w-14 h-14 rounded-full ${cat.color} mb-3 flex items-center justify-center text-2xl`}>
+                  {cat.icon}
+                </div>
+                <p className="font-medium text-foreground text-sm">{cat.label}</p>
               </CardContent>
             </Card>
           ))}

@@ -197,3 +197,48 @@
 ::-webkit-scrollbar-thumb {
   @apply bg-primary/40 rounded-full hover:bg-primary/60 transition-colors;
 }
+
+/* Navigation bar styling */
+.nav-bar {
+  background: hsl(var(--forest));
+  margin: 1px 16px 12px;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 8px;
+  z-index: 50;
+}
+
+/* Waste bin colors */
+.bin-blue { background: hsl(210 80% 55%); }
+.bin-green { background: hsl(120 50% 45%); }
+.bin-red { background: hsl(0 70% 50%); }
+.bin-grey { background: hsl(0 0% 50%); }
+
+/* Scrolling strip */
+.scroll-strip {
+  @apply overflow-x-auto whitespace-nowrap py-3;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scroll-strip::-webkit-scrollbar {
+  display: none;
+}
+
+/* Flip card animation */
+.flip-card {
+  perspective: 1000px;
+}
+.flip-card-inner {
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+.flip-card:hover .flip-card-inner {
+  transform: rotateY(180deg);
+}
+.flip-card-front, .flip-card-back {
+  backface-visibility: hidden;
+}
+.flip-card-back {
+  transform: rotateY(180deg);
+}
